@@ -1,0 +1,14 @@
+module Test.Anoma;
+
+import Stdlib.Prelude open;
+import Test.Transaction open public;
+import Test.Context open;
+import Test.JuvixUnit open;
+
+mkMain : (Context -> Context) -> IO := runContextIO;
+
+anomaAssertPass : (Context -> Context) -> Assertion :=
+  runContextAssertPass;
+
+anomaAssertFail : (Context -> Context) -> Assertion :=
+  runContextAssertFail;

@@ -1,0 +1,86 @@
+module Test.Logger;
+
+import Stdlib.Prelude open;
+import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+
+module Logger;
+
+  module Private;
+    type Level :=
+      | Info
+      | Error;
+
+    instance
+    LevelOrd : Ord Level :=
+      mkOrd@{
+        cmp : Level -> Level -> Ordering
+          | Info Error := LT
+          | Error Info := GT
+          | _ _ := EQ
+      };
+
+    instance
+    LevelEq : Eq Level := fromOrdToEq;
+
+    instance
+    LevelShow : Show Level :=
+      mkShow@{
+        show : Level -> String
+          | Info := "INFO"
+          | Error := "ERROR"
+      };
+
+    type Message :=
+      mkMessage {
+        messageLevel : Level;
+        content : String
+      };
+
+    renderMessage (message : Message) : String :=
+      "["
+        ++str Show.show (Message.messageLevel message)
+        ++str "]"
+        ++str " "
+        ++str Message.content message;
+
+    type Logger := mk {messages : List Message};
+
+    atLevel (level : Level) (message : Message) : Bool :=
+      Message.messageLevel message >= level;
+
+    messages
+      (logger : Logger) (minLevel : Level) : List Message :=
+      Logger.messages logger |> filter (atLevel minLevel);
+  end;
+
+  open Private using {Logger; Level; Info; Error} public;
+
+  init : Logger :=
+    Private.mk@{
+      messages := []
+    };
+
+  log
+    (logger : Logger) (level : Level) (s : String) : Logger :=
+    logger@Logger{messages := snoc
+      messages
+      Private.mkMessage@{
+        messageLevel := level;
+        content := s
+      }};
+
+  info (logger : Logger) : String -> Logger :=
+    log logger Info;
+
+  error (logger : Logger) : String -> Logger :=
+    log logger Error;
+
+  all : Level := Info;
+
+  renderLog (logger : Logger) (minLevel : Level) : String :=
+    Private.messages logger minLevel
+      |> map Private.renderMessage
+      |> unlines;
+end;
+
+open Logger using {Logger} public;

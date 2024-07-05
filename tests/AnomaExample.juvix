@@ -1,0 +1,53 @@
+module AnomaExample;
+
+import Stdlib.Prelude open;
+import Anoma open;
+import Transaction open;
+import Test.Anoma open;
+
+privKey : Nat :=
+  0xddd315c76991f8e058760cacdd19c21bf6a12c72bc229a60ad6aaa314fa07ac11662fc6e7829efcb0f4500827d49bb699af7b5475cef5220fd600ebbf9709a58;
+
+pubKey : Nat :=
+  0xddd315c76991f8e058760cacdd19c21bf6a12c72bc229a60ad6aaa314fa07ac1;
+
+validTx : Transaction :=
+  let r := mkResource@{
+     publicKey := pubKey;
+     logicFn := \ { _ _ := true };
+     amount := 1
+   } in
+   mkTransaction@{
+    privateKey := privKey;
+    consumed := [r];
+    created := [r]
+};
+
+invalidLogicFnTx : Transaction :=
+  let r := mkResource@{
+     publicKey := pubKey;
+     logicFn := \ { _ _ := false };
+     amount := 1
+   } in
+   mkTransaction@{
+    privateKey := privKey;
+    consumed := [r];
+    created := [r]
+};
+
+emptyProofsTx : Transaction :=
+  validTx@Transaction{proofs := []};
+
+invalidPubKey : Transaction :=
+  let r := mkResource@{
+     publicKey := 0;
+     logicFn := \ { _ _ := true };
+     amount := 1
+   } in
+   mkTransaction@{
+    privateKey := privKey;
+    consumed := [r];
+    created := [r]
+};
+
+main : IO := mkMain (verify validTx);

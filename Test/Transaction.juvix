@@ -1,0 +1,86 @@
+module Test.Transaction;
+
+import Stdlib.Prelude open;
+import Anoma open;
+
+import Test.Context open;
+import Data.Set open;
+import
+Data.Set.AVL as Set;
+
+open Context;
+
+verify (tx : Transaction) (ctx : Context) : Context :=
+  ctx
+    |> info "Verifying transaction"
+    |> info "Verifying resource set"
+    |> verifyResourceSet tx
+    |> info "Verifying delta sum"
+    |> verifyDelta tx
+    |> info "Verifying logic functions"
+    |> verifyLogics tx;
+
+verifyResourceSet
+  (tx : Transaction) (ctx : Context) : Context :=
+  let
+    txCommitments := Transaction.commitments tx;
+    txNullifiers := Transaction.nullifiers tx;
+  in case
+       checkPartitionResources
+         txCommitments
+         txNullifiers
+         (Transaction.proofs tx)
+     of
+       committed, nullified :=
+         if
+           | length committed == length txCommitments
+             && length nullified == length txNullifiers :=
+             ctx |> info "... Resource set valid"
+           | else := ctx |> Context.fail "... Resource set invalid";
+
+verifyDelta (tx : Transaction) (ctx : Context) : Context :=
+  ctx;
+
+--- Check that all logic functions are valid
+verifyLogics (tx : Transaction) (ctx : Context) : Context :=
+  let
+    allVerified :=
+      all (r in Transaction.proofs tx)
+        Resource.logic r r tx;
+  in if
+    | allVerified :=
+      ctx |> Context.info "... All logic functions passed"
+    | else := ctx |> Context.fail "... Logic functions failed";
+
+--- Obtain the Signature associated with a nullifier
+nullifierSignature (nullifier : Nat) : Nat :=
+  snd {Nat} {Nat} (anomaDecode nullifier);
+
+--- Check that the commitment and nullifiers are among the passed resources.
+checkPartitionResources
+  (commitments nullifiers : List Nat)
+  (resources : List Resource)
+  : Pair (List Resource) (List Resource) :=
+  let
+    resourceSet : Set Resource := Set.fromList resources;
+    resourceCommitments :=
+      for (acc := []) (c in commitments)
+        let
+          r := commitmentResource c;
+        in if
+          | member? r resourceSet := r :: acc
+          | else := acc;
+    resourceNullifiers :=
+      for (acc := []) (n in nullifiers)
+        let
+          r := nullifierResource n;
+          s := nullifierSignature n;
+          sigCheck :=
+            anomaVerifyDetached
+              s
+              (nullifierHeader, r)
+              (Resource.npk r);
+        in if
+          | member? r resourceSet && sigCheck := r :: acc
+          | else := acc;
+  in resourceCommitments, resourceNullifiers;

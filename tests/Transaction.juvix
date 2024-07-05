@@ -1,0 +1,34 @@
+module Transaction;
+
+import Stdlib.Prelude open;
+import Anoma open;
+
+mkTransaction
+  (privateKey : PrivateKey)
+  (consumed : List Resource)
+  (created : List Resource)
+  : Transaction :=
+  Transaction.mk@{
+    roots := [];
+    commitments := map commitment created;
+    nullifiers := map (r in consumed) nullifier r privateKey;
+    proofs := consumed ++ created;
+    delta := [];
+    extra := 0;
+    preference := 0
+  };
+
+mkResource
+  (publicKey : PublicKey)
+  (logicFn : Resource -> Transaction -> Bool)
+  (amount : Nat) : Resource :=
+  Resource.mk@{
+    logic := logicFn;
+    label := 0;
+    quantity := amount;
+    data := 0;
+    eph := false;
+    npk := publicKey;
+    nonce := 0;
+    rseed := 0
+  };

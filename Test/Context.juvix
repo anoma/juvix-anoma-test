@@ -1,0 +1,102 @@
+module Test.Context;
+
+import Stdlib.Prelude open;
+import Test.JuvixUnit as J open using {Assertion};
+import Stdlib.Debug.Fail open using {failwith};
+
+type Outcome :=
+  | Pass
+  | Fail;
+
+module Context;
+  import Test.Logger open;
+
+  open Logger using {Level; Info as LevelInfo; Error as LevelError} public;
+
+  module Private;
+    type Context :=
+      mk {
+        logger : Logger;
+        outcome : Outcome
+      };
+
+  end;
+
+  open Private using {Context} public;
+
+  init : Context :=
+    Private.mk@{
+      logger := Logger.init;
+      outcome := Pass
+    };
+
+  info (s : String) (ctx : Context) : Context :=
+    ctx@Context{logger := Logger.info logger s};
+
+  error (s : String) (ctx : Context) : Context :=
+    ctx@Context{logger := Logger.error logger s};
+
+  errorUnless
+    (b : Bool) (s : String) (ctx : Context) : Context :=
+    if
+      | b := ctx
+      | else := error s ctx;
+
+  errorWhen (b : Bool) : String -> Context -> Context :=
+    errorUnless (not b);
+
+  fail (s : String) (ctx : Context) : Context :=
+    ctx@Context{outcome := Fail} |> error s;
+
+  failUnless
+    (b : Bool) (s : String) (ctx : Context) : Context :=
+    if
+      | b := ctx
+      | else := fail s ctx;
+
+  failWhen (b : Bool) : String -> Context -> Context :=
+    failUnless (not b);
+
+  renderLog (ctx : Context) : Level -> String :=
+    Logger.renderLog (Private.Context.logger ctx);
+
+  renderLogAll (ctx : Context) : String :=
+    Logger.renderLog (Private.Context.logger ctx) Logger.all;
+
+  outcome (ctx : Context) : Outcome :=
+    Private.Context.outcome ctx;
+end;
+
+open Context using {Context} public;
+
+runContextIO (f : Context -> Context) : IO :=
+  let
+    result := f Context.init;
+    renderLog :=
+      result |> Context.renderLogAll |> printStringLn;
+  in case Context.outcome result of
+       | Fail := renderLog >>> failwith ""
+       | Pass := renderLog;
+
+runContextAssertion
+  (mkAssertion : String -> Outcome -> Assertion)
+  (f : Context -> Context)
+  : Assertion :=
+  let
+    result := f Context.init;
+    renderLog := result |> Context.renderLogAll;
+  in mkAssertion renderLog (Context.outcome result);
+
+runContextAssertPass : (Context -> Context) -> Assertion :=
+  let
+    mkAssertion (log : String) : Outcome -> Assertion
+      | Fail := J.fail log
+      | Pass := J.pass;
+  in runContextAssertion mkAssertion;
+
+runContextAssertFail : (Context -> Context) -> Assertion :=
+  let
+    mkAssertion (log : String) : Outcome -> Assertion
+      | Fail := J.pass
+      | Pass := J.fail log;
+  in runContextAssertion mkAssertion;
