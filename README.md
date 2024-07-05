@@ -20,7 +20,7 @@ $ juvix eval tests/AnomaExample.juvix
 [INFO] ... All logic functions passed
 ```
 
-An example of integration with `juvix-test` can be found in [`tests/Main.juvix`](./test/Main.juvix).
+An example of integration with `juvix-test` can be found in [`tests/Main.juvix`](./tests/Main.juvix).
 
 ```
 $ juvix eval tests/Main.juvix
@@ -32,4 +32,3 @@ Transaction with invalid public key is invalid		OK
 All tests from test suite 'Anoma tests' complete
 Suite passed
 ```
-
