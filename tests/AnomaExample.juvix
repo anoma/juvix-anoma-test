@@ -50,4 +50,30 @@ invalidPubKey : Transaction :=
     created := [r]
 };
 
+nonMatchingDelta : Transaction :=
+  let r := mkResource@{
+     publicKey := pubKey;
+     logicFn := \ { _ _ := true };
+     amount := 1
+   } in
+   mkTransaction@{
+    privateKey := privKey;
+    consumed := [r@Resource{quantity := 2}];
+    created := [r];
+    txDelta := [DeltaComponent.mk@{denom := anomaKind r; amount := 1; sign := true}]
+};
+
+matchingDelta : Transaction :=
+  let r := mkResource@{
+     publicKey := pubKey;
+     logicFn := \ { _ _ := true };
+     amount := 1
+   } in
+   mkTransaction@{
+    privateKey := privKey;
+    consumed := [r@Resource{quantity := 2}];
+    created := [r];
+    txDelta := [DeltaComponent.mk@{denom := anomaKind r; amount := 1; sign := false}]
+};
+
 main : IO := mkMain (verify validTx);

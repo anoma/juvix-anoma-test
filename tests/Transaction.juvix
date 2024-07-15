@@ -7,13 +7,14 @@ mkTransaction
   (privateKey : PrivateKey)
   (consumed : List Resource)
   (created : List Resource)
+  {txDelta : Delta := []}
   : Transaction :=
   Transaction.mk@{
     roots := [];
     commitments := map commitment created;
     nullifiers := map (r in consumed) nullifier r privateKey;
     proofs := consumed ++ created;
-    delta := [];
+    delta := txDelta;
     extra := 0;
     preference := 0
   };

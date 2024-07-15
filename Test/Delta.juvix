@@ -1,0 +1,117 @@
+module Test.Delta;
+
+import Stdlib.Prelude open;
+import Anoma open;
+import Data.Map as Map open using {Map};
+import Test.Extra.Delta open public;
+
+type DeltaMap :=
+  mkDeltaMap {unDeltaMap : Map Nat DeltaComponent};
+
+amountIsZero : DeltaComponent -> Bool :=
+  DeltaComponent.amount >> (/=) 0;
+
+toDelta : DeltaMap -> Delta :=
+  DeltaMap.unDeltaMap
+    >> Map.toList
+    >> filter (snd >> amountIsZero)
+    >> map snd;
+
+emptyDeltaMap : DeltaMap := mkDeltaMap Map.empty;
+
+appendDelta
+  (sign : Bool) (m : DeltaMap) (r : Resource) : DeltaMap :=
+  let
+    rd := resourceDelta sign r;
+  in Map.insertWith
+      addDeltaComponent
+      (anomaKind r)
+      rd
+      (DeltaMap.unDeltaMap m)
+    |> mkDeltaMap;
+
+addDelta : DeltaMap -> Resource -> DeltaMap :=
+  appendDelta@?{
+    sign := true
+  };
+
+subDelta : DeltaMap -> Resource -> DeltaMap :=
+  appendDelta@?{
+    sign := false
+  };
+
+printDeltaMap (dm : DeltaMap) : String :=
+  let
+    delta := toDelta dm;
+  in if
+    | null delta := "[Empty Delta]"
+    | else :=
+      unlines
+        <| for (acc := []) (c in delta)
+             let
+               a := DeltaComponent.amount c;
+               n : Int :=
+                 if
+                   | DeltaComponent.sign c := ofNat a
+                   | else := negNat a;
+             in snoc
+               acc
+               (Show.show (DeltaComponent.denom c)
+                 ++str " : "
+                 ++str Show.show n);
+
+resourceDelta
+  (amountSign : Bool) (r : Resource) : DeltaComponent :=
+  DeltaComponent.mk@{
+    denom := anomaKind r;
+    sign := amountSign;
+    amount := Resource.quantity r
+  };
+
+addDeltaComponent
+  (d1 d2 : DeltaComponent) : DeltaComponent :=
+  let
+    d1Amount := DeltaComponent.amount d1;
+    d2Amount := DeltaComponent.amount d2;
+    dDenom := DeltaComponent.denom d1;
+  in case DeltaComponent.sign d1, DeltaComponent.sign d2 of
+       | true, true :=
+         DeltaComponent.mk@{
+           amount := d1Amount + d2Amount;
+           sign := true;
+           denom := dDenom
+         }
+       | false, false :=
+         DeltaComponent.mk@{
+           amount := d1Amount + d2Amount;
+           sign := false;
+           denom := dDenom
+         }
+       | true, false :=
+         if
+           | d2Amount > d1Amount :=
+             DeltaComponent.mk@{
+               amount := sub d2Amount d1Amount;
+               sign := false;
+               denom := dDenom
+             }
+           | else :=
+             DeltaComponent.mk@{
+               amount := sub d1Amount d2Amount;
+               sign := true;
+               denom := dDenom
+             }
+       | false, true :=
+         if
+           | d1Amount > d2Amount :=
+             DeltaComponent.mk@{
+               amount := sub d1Amount d2Amount;
+               sign := false;
+               denom := dDenom
+             }
+           | else :=
+             DeltaComponent.mk@{
+               amount := sub d2Amount d1Amount;
+               sign := true;
+               denom := dDenom
+             };

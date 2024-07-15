@@ -5,10 +5,13 @@ import Anoma open;
 
 import Test.Context open;
 import Data.Set open;
-import
-Data.Set.AVL as Set;
+import Data.Set.AVL as Set;
+import Test.Delta open;
 
 open Context;
+
+terminating
+TODO {A} : A := TODO;
 
 verify (tx : Transaction) (ctx : Context) : Context :=
   ctx
@@ -38,8 +41,25 @@ verifyResourceSet
              ctx |> info "... Resource set valid"
            | else := ctx |> Context.fail "... Resource set invalid";
 
+--- Check that the computed delta is equal to the Transaction delta
 verifyDelta (tx : Transaction) (ctx : Context) : Context :=
-  ctx;
+  let
+    rs := partitionResources tx;
+    withCreatedDelta :=
+      for (acc := emptyDeltaMap) (r in ResourcePartition.created
+          rs)
+        addDelta acc r;
+    withConsumedDelta :=
+      for (acc := withCreatedDelta) (r in ResourcePartition.consumed
+          rs)
+        subDelta acc r;
+  in ctx
+    |> info
+      ("Computed Delta\n" ++str printDeltaMap withConsumedDelta)
+    |> if
+      | Transaction.delta tx /= toDelta withConsumedDelta :=
+        Context.fail "... Delta invalid"
+      | else := info "... Delta valid";
 
 --- Check that all logic functions are valid
 verifyLogics (tx : Transaction) (ctx : Context) : Context :=

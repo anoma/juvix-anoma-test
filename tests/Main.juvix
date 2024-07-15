@@ -22,4 +22,10 @@ main : IO :=
       ; testCase
         "Transaction with invalid public key is invalid"
         (anomaAssertFail (verify invalidPubKey))
+      ; testCase
+        "Transaction delta does not equal the delta sum is invalid"
+        (anomaAssertFail (verify nonMatchingDelta))
+      ; testCase
+        "Transaction delta equals the delta sum is valid"
+        (anomaAssertPass (verify matchingDelta))
       ]);
