@@ -3,14 +3,13 @@ module Package;
 import PackageDescription.V2 open;
 
 package : Package :=
-  defaultPackage
-    {name := "juvix-anoma-test";
-     version := mkVersion 0 1 1;
-     dependencies := [ github
-                       "anoma"
-                       "juvix-anoma-stdlib"
-                       "v0.1.0"
-                     ; github "anoma" "juvix-stdlib" "v0.4.0"
-                     ; github "anoma" "juvix-containers" "v0.12.1"
-                     ; github "anoma" "juvix-test" "v0.11.0"
-                     ]};
+  defaultPackage@?{
+    name := "juvix-anoma-test";
+    version := mkVersion 0 2 0;
+    dependencies :=
+      [ github "anoma" "juvix-anoma-stdlib" "v0.3.0"
+      ; github "anoma" "juvix-stdlib" "v0.5.0"
+      ; github "anoma" "juvix-containers" "v0.13.0"
+      ; github "anoma" "juvix-test" "v0.12.0"
+      ]
+  };

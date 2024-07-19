@@ -7,10 +7,7 @@ instance
 DeltaComponentEq : Eq DeltaComponent :=
   let
     toProd (d : DeltaComponent) : _ :=
-      DeltaComponent.denom d
-        , DeltaComponent.amount d
-        , DeltaComponent.sign d;
+      DeltaComponent.denom d, DeltaComponent.amount d, DeltaComponent.sign d;
   in mkEq@{
-    eq (d1 d2 : DeltaComponent) : Bool :=
-      Eq.eq (toProd d1) (toProd d2)
+    eq (d1 d2 : DeltaComponent) : Bool := Eq.eq (toProd d1) (toProd d2)
   };

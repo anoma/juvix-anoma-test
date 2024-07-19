@@ -14,6 +14,7 @@ mkTransaction
     commitments := map commitment created;
     nullifiers := map (r in consumed) nullifier r privateKey;
     proofs := consumed ++ created;
+    complianceProofs := [];
     delta := txDelta;
     extra := 0;
     preference := 0

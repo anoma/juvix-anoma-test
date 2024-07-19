@@ -45,11 +45,9 @@ module Logger;
 
     type Logger := mk {messages : List Message};
 
-    atLevel (level : Level) (message : Message) : Bool :=
-      Message.messageLevel message >= level;
+    atLevel (level : Level) (message : Message) : Bool := Message.messageLevel message >= level;
 
-    messages
-      (logger : Logger) (minLevel : Level) : List Message :=
+    messages (logger : Logger) (minLevel : Level) : List Message :=
       Logger.messages logger |> filter (atLevel minLevel);
   end;
 
@@ -60,8 +58,7 @@ module Logger;
       messages := []
     };
 
-  log
-    (logger : Logger) (level : Level) (s : String) : Logger :=
+  log (logger : Logger) (level : Level) (s : String) : Logger :=
     logger@Logger{messages := snoc
       messages
       Private.mkMessage@{
@@ -69,18 +66,14 @@ module Logger;
         content := s
       }};
 
-  info (logger : Logger) : String -> Logger :=
-    log logger Info;
+  info (logger : Logger) : String -> Logger := log logger Info;
 
-  error (logger : Logger) : String -> Logger :=
-    log logger Error;
+  error (logger : Logger) : String -> Logger := log logger Error;
 
   all : Level := Info;
 
   renderLog (logger : Logger) (minLevel : Level) : String :=
-    Private.messages logger minLevel
-      |> map Private.renderMessage
-      |> unlines;
+    Private.messages logger minLevel |> map Private.renderMessage |> unlines;
 end;
 
 open Logger using {Logger} public;
