@@ -7,8 +7,6 @@ import Test.JuvixUnit open;
 
 mkMain : (Context -> Context) -> IO := runContextIO;
 
-anomaAssertPass : (Context -> Context) -> Assertion :=
-  runContextAssertPass;
+anomaAssertPass : (Context -> Context) -> Assertion := runContextAssertPass;
 
-anomaAssertFail : (Context -> Context) -> Assertion :=
-  runContextAssertFail;
+anomaAssertFail : (Context -> Context) -> Assertion := runContextAssertFail;

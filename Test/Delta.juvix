@@ -5,30 +5,19 @@ import Anoma open;
 import Data.Map as Map open using {Map};
 import Test.Extra.Delta open public;
 
-type DeltaMap :=
-  mkDeltaMap {unDeltaMap : Map Nat DeltaComponent};
+type DeltaMap := mkDeltaMap {unDeltaMap : Map Nat DeltaComponent};
 
-amountIsZero : DeltaComponent -> Bool :=
-  DeltaComponent.amount >> (/=) 0;
+amountIsZero : DeltaComponent -> Bool := DeltaComponent.amount >> (/=) 0;
 
 toDelta : DeltaMap -> Delta :=
-  DeltaMap.unDeltaMap
-    >> Map.toList
-    >> filter (snd >> amountIsZero)
-    >> map snd;
+  DeltaMap.unDeltaMap >> Map.toList >> filter (snd >> amountIsZero) >> map snd;
 
 emptyDeltaMap : DeltaMap := mkDeltaMap Map.empty;
 
-appendDelta
-  (sign : Bool) (m : DeltaMap) (r : Resource) : DeltaMap :=
+appendDelta (sign : Bool) (m : DeltaMap) (r : Resource) : DeltaMap :=
   let
     rd := resourceDelta sign r;
-  in Map.insertWith
-      addDeltaComponent
-      (anomaKind r)
-      rd
-      (DeltaMap.unDeltaMap m)
-    |> mkDeltaMap;
+  in Map.insertWith addDeltaComponent (anomaKind r) rd (DeltaMap.unDeltaMap m) |> mkDeltaMap;
 
 addDelta : DeltaMap -> Resource -> DeltaMap :=
   appendDelta@?{
@@ -54,22 +43,16 @@ printDeltaMap (dm : DeltaMap) : String :=
                  if
                    | DeltaComponent.sign c := ofNat a
                    | else := negNat a;
-             in snoc
-               acc
-               (Show.show (DeltaComponent.denom c)
-                 ++str " : "
-                 ++str Show.show n);
+             in snoc acc (Show.show (DeltaComponent.denom c) ++str " : " ++str Show.show n);
 
-resourceDelta
-  (amountSign : Bool) (r : Resource) : DeltaComponent :=
+resourceDelta (amountSign : Bool) (r : Resource) : DeltaComponent :=
   DeltaComponent.mk@{
     denom := anomaKind r;
     sign := amountSign;
     amount := Resource.quantity r
   };
 
-addDeltaComponent
-  (d1 d2 : DeltaComponent) : DeltaComponent :=
+addDeltaComponent (d1 d2 : DeltaComponent) : DeltaComponent :=
   let
     d1Amount := DeltaComponent.amount d1;
     d2Amount := DeltaComponent.amount d2;

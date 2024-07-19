@@ -10,9 +10,6 @@ import Test.Delta open;
 
 open Context;
 
-terminating
-TODO {A} : A := TODO;
-
 verify (tx : Transaction) (ctx : Context) : Context :=
   ctx
     |> info "Verifying transaction"
@@ -23,21 +20,14 @@ verify (tx : Transaction) (ctx : Context) : Context :=
     |> info "Verifying logic functions"
     |> verifyLogics tx;
 
-verifyResourceSet
-  (tx : Transaction) (ctx : Context) : Context :=
+verifyResourceSet (tx : Transaction) (ctx : Context) : Context :=
   let
     txCommitments := Transaction.commitments tx;
     txNullifiers := Transaction.nullifiers tx;
-  in case
-       checkPartitionResources
-         txCommitments
-         txNullifiers
-         (Transaction.proofs tx)
-     of
+  in case checkPartitionResources txCommitments txNullifiers (Transaction.proofs tx) of
        committed, nullified :=
          if
-           | length committed == length txCommitments
-             && length nullified == length txNullifiers :=
+           | length committed == length txCommitments && length nullified == length txNullifiers :=
              ctx |> info "... Resource set valid"
            | else := ctx |> Context.fail "... Resource set invalid";
 
@@ -46,35 +36,27 @@ verifyDelta (tx : Transaction) (ctx : Context) : Context :=
   let
     rs := partitionResources tx;
     withCreatedDelta :=
-      for (acc := emptyDeltaMap) (r in ResourcePartition.created
-          rs)
+      for (acc := emptyDeltaMap) (r in ResourcePartition.created rs)
         addDelta acc r;
     withConsumedDelta :=
-      for (acc := withCreatedDelta) (r in ResourcePartition.consumed
-          rs)
+      for (acc := withCreatedDelta) (r in ResourcePartition.consumed rs)
         subDelta acc r;
   in ctx
-    |> info
-      ("Computed Delta\n" ++str printDeltaMap withConsumedDelta)
+    |> info ("Computed Delta\n" ++str printDeltaMap withConsumedDelta)
     |> if
-      | Transaction.delta tx /= toDelta withConsumedDelta :=
-        Context.fail "... Delta invalid"
+      | Transaction.delta tx /= toDelta withConsumedDelta := Context.fail "... Delta invalid"
       | else := info "... Delta valid";
 
 --- Check that all logic functions are valid
 verifyLogics (tx : Transaction) (ctx : Context) : Context :=
   let
-    allVerified :=
-      all (r in Transaction.proofs tx)
-        Resource.logic r r tx;
+    allVerified := all (r in Transaction.proofs tx) Resource.logic r r tx;
   in if
-    | allVerified :=
-      ctx |> Context.info "... All logic functions passed"
+    | allVerified := ctx |> Context.info "... All logic functions passed"
     | else := ctx |> Context.fail "... Logic functions failed";
 
 --- Obtain the Signature associated with a nullifier
-nullifierSignature (nullifier : Nat) : Nat :=
-  snd {Nat} {Nat} (anomaDecode nullifier);
+nullifierSignature (nullifier : Nat) : Nat := snd {Nat} {Nat} (anomaDecode nullifier);
 
 --- Check that the commitment and nullifiers are among the passed resources.
 checkPartitionResources
@@ -95,11 +77,7 @@ checkPartitionResources
         let
           r := nullifierResource n;
           s := nullifierSignature n;
-          sigCheck :=
-            anomaVerifyDetached
-              s
-              (nullifierHeader, r)
-              (Resource.npk r);
+          sigCheck := anomaVerifyDetached s (nullifierHeader, r) (Resource.npk r);
         in if
           | member? r resourceSet && sigCheck := r :: acc
           | else := acc;
