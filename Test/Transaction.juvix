@@ -2,6 +2,7 @@ module Test.Transaction;
 
 import Stdlib.Prelude open;
 import Anoma open;
+import Anoma.Rep as Rep;
 
 import Test.Context open;
 import Data.Set open;
@@ -56,11 +57,13 @@ verifyLogics (tx : Transaction) (ctx : Context) : Context :=
     | else := ctx |> Context.fail "... Logic functions failed";
 
 --- Obtain the Signature associated with a nullifier
-nullifierSignature (nullifier : Nat) : Nat := snd {Nat} {Nat} (anomaDecode nullifier);
+nullifierSignature (nullifier : Nullifier) : Signature :=
+  snd {Nat} {Nat} (anomaDecode (Nullifier.unNullifier nullifier)) |> Rep.fromAtom;
 
 --- Check that the commitment and nullifiers are among the passed resources.
 checkPartitionResources
-  (commitments nullifiers : List Nat)
+  (commitments : List Commitment)
+  (nullifiers : List Nullifier)
   (resources : List Resource)
   : Pair (List Resource) (List Resource) :=
   let
@@ -77,7 +80,8 @@ checkPartitionResources
         let
           r := nullifierResource n;
           s := nullifierSignature n;
-          sigCheck := anomaVerifyDetached s (nullifierHeader, r) (Resource.npk r);
+          sigCheck :=
+            anomaVerifyDetached s (nullifierHeader, r) (Rep.fromAtom (Resource.npkContents r));
         in if
           | member? r resourceSet && sigCheck := r :: acc
           | else := acc;

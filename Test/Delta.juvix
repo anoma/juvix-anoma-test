@@ -5,7 +5,7 @@ import Anoma open;
 import Data.Map as Map open using {Map};
 import Test.Extra.Delta open public;
 
-type DeltaMap := mkDeltaMap {unDeltaMap : Map Nat DeltaComponent};
+type DeltaMap := mkDeltaMap {unDeltaMap : Map Kind DeltaComponent};
 
 amountIsZero : DeltaComponent -> Bool := DeltaComponent.amount >> (/=) 0;
 
@@ -43,7 +43,9 @@ printDeltaMap (dm : DeltaMap) : String :=
                  if
                    | DeltaComponent.sign c := ofNat a
                    | else := negNat a;
-             in snoc acc (Show.show (DeltaComponent.denom c) ++str " : " ++str Show.show n);
+             in snoc
+               acc
+               (Show.show (Kind.unKind (DeltaComponent.denom c)) ++str " : " ++str Show.show n);
 
 resourceDelta (amountSign : Bool) (r : Resource) : DeltaComponent :=
   DeltaComponent.mk@{
