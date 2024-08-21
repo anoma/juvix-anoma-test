@@ -1,0 +1,157 @@
+module Simulator.Data.MerkleTree;
+
+import Stdlib.Prelude open;
+import Simulator.Data.Hash open using {hash as mkHash};
+import Simulator.Data.ByteArray open;
+
+type Node :=
+  mkNode {
+    hash : ByteArray;
+    left : MerkleTree;
+    right : MerkleTree
+  };
+
+type Leaf :=
+  mkLeaf {
+    hash : ByteArray;
+    value : ByteArray
+  };
+
+type MerkleTree :=
+  | empty
+  | leaf Leaf
+  | node Node;
+
+treeHash : MerkleTree -> ByteArray
+  | empty := ByteArray.empty
+  | (leaf l) := Leaf.hash l
+  | (node n) := Node.hash n;
+
+rootHash : MerkleTree -> ByteArray := treeHash;
+
+depth : MerkleTree -> Nat
+  | empty := 0
+  | (leaf _) := 1
+  | (node mkNode@{left; right}) := 1 + max (depth left) (depth right);
+
+terminating
+insert (t : MerkleTree) (e : ByteArray) : MerkleTree :=
+  case t of
+    | empty :=
+      mkLeaf@{
+          hash := mkLeafRootHash e;
+          value := e
+        }
+        |> leaf
+    | leaf l :=
+      let
+        eHash := mkHash e;
+      in mkNode@{
+          hash := mkRootHash (Leaf.hash l) eHash;
+          left := t;
+          right :=
+            mkLeaf@{
+                hash := eHash;
+                value := e
+              }
+              |> leaf
+        }
+        |> node
+    | node mkNode@{left; right; hash} :=
+      let
+        terminating
+        newLeft := insert left e;
+        terminating
+        newRight := insert right e;
+      in if
+        | depth left <= depth right :=
+          mkNode (mkRootHash (treeHash newLeft) (treeHash right)) newLeft right |> node
+        | else := mkNode (mkRootHash (treeHash left) (treeHash newRight)) left newRight |> node;
+
+mkRootHash (ba1 ba2 : ByteArray) : ByteArray := mkHash (ba1 <> ba2);
+
+mkLeafRootHash (ba1 : ByteArray) : ByteArray := mkHash (ba1);
+
+import Stdlib.Trait.Eq open;
+
+type Side :=
+  | L
+  | R;
+
+instance
+SideEqI : Eq Side :=
+  mkEq@{
+    eq : Side -> Side -> Bool
+      | L L := true
+      | R R := true
+      | _ _ := false
+  };
+
+type ProofElem :=
+  mkProofElem {
+    nodeHash : ByteArray;
+    siblingHash : ByteArray;
+    nodeSide : Side
+  };
+
+instance
+ProofElemEqI : Eq ProofElem :=
+  let
+    proofElemToProd (p : ProofElem) : Pair ByteArray (Pair ByteArray Side) :=
+      ProofElem.nodeHash p, ProofElem.siblingHash p, ProofElem.nodeSide p;
+  in mkEq (Eq.eq on proofElemToProd);
+
+type MerkleProof := mkMerkleProof {path : List ProofElem};
+
+instance
+MerkleProofEqI : Eq MerkleProof := mkEq (Eq.eq on MerkleProof.path);
+
+generateProof (t : MerkleTree) (e : ByteArray) : Maybe MerkleProof :=
+  let
+    terminating
+    constructPath (pElems : List ProofElem) (t' : MerkleTree) : Maybe (List ProofElem) :=
+      case t' of
+        | empty := nothing
+        | leaf l :=
+          if
+            | Leaf.value l == e := just (pElems)
+            | else := nothing
+        | node n :=
+          let
+            lProofElem :=
+              mkProofElem@{
+                nodeHash := treeHash (Node.left n);
+                siblingHash := treeHash (Node.right n);
+                nodeSide := L
+              };
+            rProofElem :=
+              mkProofElem@{
+                nodeHash := treeHash (Node.right n);
+                siblingHash := treeHash (Node.left n);
+                nodeSide := R
+              };
+            terminating
+            lPath := constructPath (lProofElem :: pElems) (Node.left n);
+            terminating
+            rPath := constructPath (rProofElem :: pElems) (Node.right n);
+          in case lPath, rPath of
+               | nothing, nothing := nothing
+               | _ := just (fromMaybe [] lPath ++ fromMaybe [] rPath);
+  in map mkMerkleProof (constructPath [] t);
+
+verifyProof (proof : MerkleProof) (rootTreeHash : ByteArray) (e : ByteArray) : Bool :=
+
+  let
+    leafHash := mkLeafRootHash e;
+    hashProofElem (p : ProofElem) : ByteArray :=
+      case ProofElem.nodeSide p of
+        | L := mkRootHash (ProofElem.nodeHash p) (ProofElem.siblingHash p)
+        | R := mkRootHash (ProofElem.siblingHash p) (ProofElem.nodeHash p);
+
+    verify (proofHash : ByteArray) : List ProofElem -> Bool
+      | [] := proofHash == rootTreeHash
+      | (pElem :: pElems) :=
+        if
+          | proofHash /= ProofElem.nodeHash pElem := false
+          | else := verify (hashProofElem pElem) pElems;
+  in verify leafHash (MerkleProof.path proof);
