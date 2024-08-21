@@ -5,6 +5,7 @@ import Anoma open;
 import Test.Anoma open;
 import AnomaExample open;
 import Test.JuvixUnit open;
+import Test.Simulator.MerkleTree open using {merkleTestSuite};
 
 main : IO :=
   runTestSuite
@@ -28,4 +29,5 @@ main : IO :=
       ; testCase
         "Transaction delta equals the delta sum is valid"
         (anomaAssertPass (verify matchingDelta))
-      ]);
+      ])
+  >>> runTestSuite merkleTestSuite;

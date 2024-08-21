@@ -1,0 +1,41 @@
+module Test.Simulator.MerkleTree;
+
+import Stdlib.Prelude open;
+import Simulator.Data.MerkleTree as MerkleTree open using {MerkleTree; MerkleProof; generateProof; verifyProof};
+import Simulator.Data.ByteArray open;
+import Test.JuvixUnit open;
+
+myMerkleTree : MerkleTree :=
+  foldl MerkleTree.insert MerkleTree.empty (map ByteArray.singleton [0; 1; 2; 3; 4]);
+
+myRootHash : ByteArray := MerkleTree.rootHash myMerkleTree;
+
+validProof3InTree : Maybe MerkleProof := generateProof myMerkleTree (ByteArray.singleton 3);
+
+invalidProof10InTree : Maybe MerkleProof := generateProof myMerkleTree (ByteArray.singleton 10);
+
+checkProof (value : ByteArray) (treeRoot : ByteArray) : Maybe MerkleProof -> Bool :=
+  maybe false \ {p := verifyProof p treeRoot value};
+
+tests : List Test :=
+  [ testCase
+    "validProof3InTree can be verified with 3 value"
+    (assertTrue
+      "expected to verify validProof3InTree"
+      (checkProof (ByteArray.singleton 3) myRootHash validProof3InTree))
+  ; testCase
+    "validProof3InTree cannot be verified with 2 value"
+    (assertFalse
+      "expected not to verify validProof3InTree"
+      (checkProof (ByteArray.singleton 2) myRootHash validProof3InTree))
+  ; testCase
+    "validProof3InTree cannot be verified with 10 value (not in the tree)"
+    (assertFalse
+      "expected not to verify validProof3InTree"
+      (checkProof (ByteArray.singleton 10) myRootHash validProof3InTree))
+  ; testCase
+    "generateProof returns nothing if value is not in the tree"
+    (assertNothing (const "expected generateProof to return nothing") invalidProof10InTree)
+  ];
+
+merkleTestSuite : TestSuite := testSuite "MerkleTreeTests" tests;
