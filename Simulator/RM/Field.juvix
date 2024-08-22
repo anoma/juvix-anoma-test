@@ -1,0 +1,7 @@
+module Simulator.RM.Field;
+
+import Stdlib.Prelude open;
+
+type FF := mk {
+    value : Nat
+}

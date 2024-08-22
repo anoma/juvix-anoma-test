@@ -1,0 +1,30 @@
+module Simulator.RM.CMacc;
+
+import Stdlib.Prelude open;
+import Simulator.Data.MerkleTree as MerkleTree open using {MerkleTree; MerkleProof};
+import Simulator.RM.Commitment as Commitment open using {Commitment; module Commitment};
+import Simulator.Data.ByteArray as ByteArray open using {ByteArray};
+
+type CMacc := mkCMacc {
+  merkleTree : MerkleTree
+};
+
+type Witness := mkWitness {
+  proof : MerkleProof
+};
+
+type CMaccValue := mkCMaccValue {
+  root : ByteArray
+};
+
+add (acc : CMacc) (cm : Commitment) : Pair Witness CMacc :=
+  case MerkleTree.insertAndProve (CMacc.merkleTree acc) (Commitment.value cm) of
+    | (p, t) := (mkWitness p, mkCMacc t);
+
+witness (acc : CMacc) (cm : Commitment) : Maybe Witness :=
+  Commitment.value cm |> MerkleTree.generateProof (CMacc.merkleTree acc) |> map mkWitness; 
+  
+verify (cm : Commitment) (w : Witness) (val : CMaccValue) : Bool :=
+  MerkleTree.verifyProof (Witness.proof w) (CMaccValue.root val) (Commitment.value cm);
+  
+value (acc : CMacc) : CMaccValue := CMacc.merkleTree acc |> MerkleTree.rootHash |> mkCMaccValue;
