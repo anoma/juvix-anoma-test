@@ -1,7 +1,10 @@
 # Resource Machine Specification
 
-<!---
+## Notation
 
+Every function and field in the Resource Machine has an associated FiniteField. For now we use a single FiniteField type that wraps a `Nat` to represent them all.
+
+<!---
 ```juvix "import field"
 import Simulator.RM.Field open;
 ```
@@ -15,13 +18,6 @@ import Stdlib.Prelude open;
 import Stdlib.Prelude open;
 ```
 
-```juvix Simulator/RM/Resource.juvix
-module Simulator.RM.Resource;
-
-<<<resource imports>>>
-
-<<<resource body>>>
-```
 
 ```juvix Simulator/RM/Field.juvix
 module Simulator.RM.Field;
@@ -30,29 +26,26 @@ module Simulator.RM.Field;
 
 <<<field body>>>
 ```
-
-
-```juvix Simulator/RM/Commitment.juvix
-module Simulator.RM.Commitment;
-import Stdlib.Prelude open;
-import Simulator.Data.ByteArray open;
-
-<<<commitment body>>>
-```
-
 --->
-
-## Notation
-
-Every function and field in the Resource Machine has an associated FiniteField. For now we use a single FiniteField type that wraps a `Nat` to represent them all.
 
 ```juvix "field body" +=
 type FF := mk {
     value : Nat
-}
+};
+
 ```
 
 ## Resource
+
+<!---
+```juvix Simulator/RM/Resource.juvix
+module Simulator.RM.Resource;
+
+<<<resource imports>>>
+
+<<<resource body>>>
+```
+--->
 
 The atomic unit of the ARM state is called a resource. Resources are immutable,
 they can be created once and consumed once, which indicates that the system
@@ -77,6 +70,10 @@ information but does not affect the resource’s fungibility
 * cnk - is a nullifier key commitment. Corresponds to the nullifier key nk used
   to derive the resource nullifier
 * rseed - randomness seed used to derive whatever randomness needed
+
+The cnk is the nullifier public key.
+
+The logic function field is the Nat corresponding to the bytes of the hash of the Nock representation of the logic function. Conceptually it is: `hash >> anomaEncode`
   
 ```juvix "resource body" +=
 type Resource := mk {
@@ -95,6 +92,17 @@ type Resource := mk {
 ## Computable Components
 
 ### Commitment
+
+<!---
+
+```juvix Simulator/RM/Commitment.juvix
+module Simulator.RM.Commitment;
+import Stdlib.Prelude open;
+import Anoma.Data.ByteArray open;
+
+<<<commitment body>>>
+```
+--->
 
 For a resource r, _resource commitment_ is computed. The commitment is tied to
 the created resource but does noot reveal information about the resource beyond
@@ -147,7 +155,7 @@ module Simulator.RM.CMacc;
 import Stdlib.Prelude open;
 import Simulator.Data.MerkleTree as MerkleTree open using {MerkleTree; MerkleProof};
 import Simulator.RM.Commitment as Commitment open using {Commitment; module Commitment};
-import Simulator.Data.ByteArray as ByteArray open using {ByteArray};
+import Anoma.Data.ByteArray as ByteArray open using {ByteArray};
 ```
 
 We wrap the MerkleTree types using the names from the spec:
@@ -212,7 +220,7 @@ For this we need to import the PrivateKey type, and anomaSignDetached:
 ```juvix "resource imports" +=
 import Anoma.Types open using {PrivateKey; Signature};
 import Anoma.System open using {anomaSignDetached};
-import Simulator.Data.ByteArray as ByteArray open using {ByteArray};
+import Anoma.Data.ByteArray as ByteArray open using {ByteArray};
 ```
 
 And define the nullifier by signing the resource plaintext with a key:
@@ -256,6 +264,7 @@ SignatureOrdI : Ord Signature := mkOrd (Ord.cmp on Signature.unSignature);
 
 instance
 NullifierOrdI : Ord Nullifier := mkOrd (Ord.cmp on Nullifier.signature); 
+
 ```
 
 ```juvix "nfset imports" +=
@@ -301,3 +310,223 @@ kind (r : Resource) : Kind := hash (Resource.l r, Resource.label r) |> mkKind;
 
 ```
 
+### Delta
+
+Resource deltas are used to reason about the total quantities of different kinds of resources in transactions.
+
+In general these are need to have cryptographic properties but for the purposes of the simulator we will use a Pair of kind and quantity.
+
+```juvix "resource body" +=
+type Delta := mkDelta {
+  kind : Kind;
+  quantity : FF
+};
+
+delta (r : Resource) : Delta := mkDelta (kind r) (Resource.q r);
+
+```
+
+### Resource Logic
+
+A resource logic is a function that approves the creation and consumption of a resource.
+
+<!---
+
+```juvix Simulator/RM/ResourceLogic.juvix
+module Simulator.RM.ResourceLogic;
+
+import Stdlib.Prelude open;
+<<<resource_logic imports>>>
+
+<<<resource_logic body>>>
+```
+--->
+
+We will need to import `Resource`, `Nullifier`, `Commitment` to use it.
+
+```juvix "resource_logic imports" +=
+import Simulator.RM.Resource as Resoruce open using {Resource; module Resource; Nullifier};
+import Simulator.RM.Commitment open;
+import Simulator.RM.Field open;
+```
+
+We will also need to import `Set`:
+
+```juvix "resource_logic imports" +=
+import Data.Set as Set open using {Set};
+import Data.Map as Map open using {Map};
+import Anoma.Types open using {Signature};
+```
+
+Resource logic takes as input a subset of resources created and consumed in the action.
+
+A logic function also takes some set of custom inputs called app_data. This is a Map where the values also have deletion criteria.
+
+```juvix "resource_logic body" +=
+
+type Timestamp := mkTimestamp {
+  unTimestamp : Nat
+};
+
+type Block := mkBlock {
+  unBlock : Nat
+};
+
+type SigOverData := mkSigOverData {
+  sig : Signature;
+  data : Nat
+};
+
+type EitherPredicate := mkEitherPredicate {
+  predicate1 : DeletionCriteria;
+  predicate2 : DeletionCriteria
+};
+
+type DeletionCriteria :=
+  storeForever 
+  | deleteAfterTimestamp Timestamp
+  | deleteAfterBlock Block
+  | deleteAfter SigOverData
+  | deleteAfterPredicate EitherPredicate;
+
+type AppDataValue := mkAppDataValue {
+  value : FF;
+  deletionCriteria : DeletionCriteria
+};
+
+type AppData := mkAppData {
+  data : Map FF AppDataValue
+};
+
+```
+
+For this we need `FF` to have an ord instance:
+
+```juvix "field body" +=
+instance
+FieldOrdI : Ord FF := mkOrd (Ord.cmp on FF.value);
+
+```
+
+#### Instance
+
+The tag identifies the resource being checked. How is this used?
+
+```juvix "resource_logic body" +=
+type Instance := mkInstance {
+  nfs : Set Nullifier;
+  cms : Set Commitment;
+  tag : FF;
+  app_data : AppData;
+};
+
+```
+
+#### Witness
+
+These are not referred to in the text of the report, so I'm not sure what they represent. Do custom imports relate the the app_data in some way?
+
+```juvix "resource_logic body" +=
+type Witness := mkWitness {
+  input : Set Resource;
+  output : Set Resource;
+  custom : Set Nat
+};
+
+```
+
+#### Constraints
+
+The body of the logic function will check that the inputs/outputs are valid.
+
+#### Resource logic signature
+
+I think this means that the resource logic signature will look like:
+
+```juvix "resource_logic body" += 
+ResourceLogic : Type := Instance -> Witness -> Bool;
+```
+
+## Proving Systems
+
+This relates to proofs of knowledge for a valid transaction. In the simulator we will use a trivial transparent system where the knowledge is proven by publically revealing it.
+
+<!---
+```juvix Simulator/RM/ProvingSystem.juvix
+module Simulator.RM.ProvingSystem;
+
+import Stdlib.Prelude open;
+<<<proving_system imports>>>
+
+<<<proving_system body>>>
+```
+--->
+
+```juvix "proving_system imports" +=
+```
+
+In general a proving system is parametrize by the following:
+
+* Proof
+* Instance - the subset of inputs required to both create and verify a proof
+* Witness - the subset of inputs used to produce but not verify a proof
+* Proving key - The data required, along with the instance and the witness to produce a proof.
+* Verifying key - The data required, along with the witness to verify a proof.
+
+```juivx "proving_system body" +=
+
+trait
+type ProvingSystem (Proof : Type) (Instance : Type) (Witness : Type) (VerifyingKey : Type) (ProvingKey : Type) := mkProvingSystem {
+  prove : ProvingKey -> Instance -> Witness -> Proof;
+  verify : Proof -> Instance -> VerifyingKey -> Bool
+};
+
+```
+
+We can define a trivial proving system:
+
+```juvix "proving_system body" +=
+instance
+TrivialPS {A} : ProvingSystem A A Unit Unit Unit := mkProvingSystem@{
+  prove (_ : Unit) (a : A) (_ : Unit) : A := a;
+  verify (proof : A) (_ : A) (_ : Unit) : Bool := true
+};
+
+
+```
+
+
+
+## Action
+
+An action defines a proof context, a proof created in the context of an action is assumed to have guaranteed access only to the resources associated with the action.
+
+<!---
+```juvix Simulator/RM/Action.juvix
+module Simulator.RM.Action;
+
+import Stdlib.Prelude open;
+<<<action imports>>>
+
+<<<action body>>>
+```
+--->
+
+Let's import the types we need:
+
+```juvix "action imports" +=
+import Simulator.RM.Resource open using {Nullifier};
+import Simulator.RM.Commitment open using {Commitment};
+import Simulator.RM.ResourceLogic open using {AppData};
+import Data.Set as Set open using {Set};
+```
+
+```juvix "action body" +=
+type Action (Proof : Type) := mkAction {
+  cms : Set Commitment;
+  nfs : Set Nullifier;
+  proofs : Set Proof;
+  appData : AppData
+};
+
+```

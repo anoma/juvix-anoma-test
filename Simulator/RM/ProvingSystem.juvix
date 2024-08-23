@@ -1,0 +1,18 @@
+module Simulator.RM.ProvingSystem;
+
+import Stdlib.Prelude open;
+
+
+trait
+type ProvingSystem (Proof : Type) (Instance : Type) (Witness : Type) (VerifyingKey : Type) (ProvingKey : Type) := mkProvingSystem {
+  prove : ProvingKey -> Instance -> Witness -> Proof;
+  verify : Proof -> Instance -> VerifyingKey -> Bool
+};
+
+instance
+TrivialPS {A} : ProvingSystem A A Unit Unit Unit := mkProvingSystem@{
+  prove (_ : Unit) (a : A) (_ : Unit) : A := a;
+  verify (proof : A) (_ : A) (_ : Unit) : Bool := true
+};
+
+

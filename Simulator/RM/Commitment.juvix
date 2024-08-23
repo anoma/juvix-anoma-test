@@ -1,6 +1,6 @@
 module Simulator.RM.Commitment;
 import Stdlib.Prelude open;
-import Simulator.Data.ByteArray open;
+import Anoma.Data.ByteArray open;
 
 type Commitment := mk {
   value : ByteArray

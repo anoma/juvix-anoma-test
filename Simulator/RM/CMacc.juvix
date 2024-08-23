@@ -3,7 +3,7 @@ module Simulator.RM.CMacc;
 import Stdlib.Prelude open;
 import Simulator.Data.MerkleTree as MerkleTree open using {MerkleTree; MerkleProof};
 import Simulator.RM.Commitment as Commitment open using {Commitment; module Commitment};
-import Simulator.Data.ByteArray as ByteArray open using {ByteArray};
+import Anoma.Data.ByteArray as ByteArray open using {ByteArray};
 
 type CMacc := mkCMacc {
   merkleTree : MerkleTree

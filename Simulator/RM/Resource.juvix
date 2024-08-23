@@ -6,7 +6,7 @@ import Simulator.Data.Hash open using {hash};
 import Simulator.RM.Commitment as Commitment open using {Commitment};
 import Anoma.Types open using {PrivateKey; Signature};
 import Anoma.System open using {anomaSignDetached};
-import Simulator.Data.ByteArray as ByteArray open using {ByteArray};
+import Anoma.Data.ByteArray as ByteArray open using {ByteArray};
 import Anoma.Types open using {module Signature};
 
 type Resource := mk {
@@ -33,9 +33,17 @@ SignatureOrdI : Ord Signature := mkOrd (Ord.cmp on Signature.unSignature);
 
 instance
 NullifierOrdI : Ord Nullifier := mkOrd (Ord.cmp on Nullifier.signature); 
+
 type Kind := mkKind {
   unKind : ByteArray;
 };
 
 kind (r : Resource) : Kind := hash (Resource.l r, Resource.label r) |> mkKind;
+
+type Delta := mkDelta {
+  kind : Kind;
+  quantity : FF
+};
+
+delta (r : Resource) : Delta := mkDelta (kind r) (Resource.q r);
 
