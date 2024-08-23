@@ -1,0 +1,14 @@
+module Simulator.RM.Action;
+
+import Stdlib.Prelude open;
+import Simulator.RM.Resource open using {Nullifier};
+import Simulator.RM.Commitment open using {Commitment};
+import Simulator.RM.ResourceLogic open using {AppData};
+import Data.Set as Set open using {Set};
+
+type Action (Proof : Type) := mkAction {
+  cms : Set Commitment;
+  nfs : Set Nullifier;
+  proofs : Set Proof;
+  appData : AppData
+};

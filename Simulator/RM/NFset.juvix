@@ -1,0 +1,14 @@
+module Simulator.RM.NFset;
+
+import Stdlib.Prelude open;
+import Data.Set as Set open using {Set};
+import Simulator.RM.Resource open using {Nullifier};
+
+type NFset := mk {
+  unNFset : Set Nullifier
+};
+
+write (nf : Nullifier) (s : NFset) : NFset := Set.insert nf (s |> NFset.unNFset) |> mk;
+
+exists (nf : Nullifier) (s : NFset) : Bool := Set.member? nf (s |> NFset.unNFset);
+

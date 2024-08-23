@@ -1,0 +1,59 @@
+module Simulator.RM.ResourceLogic;
+
+import Stdlib.Prelude open;
+import Simulator.RM.Resource as Resoruce open using {Resource; module Resource; Nullifier};
+import Simulator.RM.Commitment open;
+import Simulator.RM.Field open;
+import Data.Set as Set open using {Set};
+import Data.Map as Map open using {Map};
+import Anoma.Types open using {Signature};
+
+
+type Timestamp := mkTimestamp {
+  unTimestamp : Nat
+};
+
+type Block := mkBlock {
+  unBlock : Nat
+};
+
+type SigOverData := mkSigOverData {
+  sig : Signature;
+  data : Nat
+};
+
+type EitherPredicate := mkEitherPredicate {
+  predicate1 : DeletionCriteria;
+  predicate2 : DeletionCriteria
+};
+
+type DeletionCriteria :=
+  storeForever 
+  | deleteAfterTimestamp Timestamp
+  | deleteAfterBlock Block
+  | deleteAfter SigOverData
+  | deleteAfterPredicate EitherPredicate;
+
+type AppDataValue := mkAppDataValue {
+  value : FF;
+  deletionCriteria : DeletionCriteria
+};
+
+type AppData := mkAppData {
+  data : Map FF AppDataValue
+};
+
+type Instance := mkInstance {
+  nfs : Set Nullifier;
+  cms : Set Commitment;
+  tag : FF;
+  app_data : AppData;
+};
+
+type Witness := mkWitness {
+  input : Set Resource;
+  output : Set Resource;
+  custom : Set Nat
+};
+
+ResourceLogic : Type := Instance -> Witness -> Bool;

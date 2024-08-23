@@ -1,0 +1,11 @@
+module Simulator.RM.Field;
+
+import Stdlib.Prelude open;
+
+type FF := mk {
+    value : Nat
+};
+
+instance
+FieldOrdI : Ord FF := mkOrd (Ord.cmp on FF.value);
+

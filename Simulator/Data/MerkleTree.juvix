@@ -2,7 +2,8 @@ module Simulator.Data.MerkleTree;
 
 import Stdlib.Prelude open;
 import Simulator.Data.Hash open using {hash as mkHash};
-import Simulator.Data.ByteArray open;
+import Anoma.Data.ByteArray as ByteArray open using {ByteArray; <>};
+import Stdlib.Debug.Fail open using {failwith};
 
 type Node :=
   mkNode {
@@ -155,3 +156,8 @@ verifyProof (proof : MerkleProof) (rootTreeHash : ByteArray) (e : ByteArray) : B
           | proofHash /= ProofElem.nodeHash pElem := false
           | else := verify (hashProofElem pElem) pElems;
   in verify leafHash (MerkleProof.path proof);
+
+insertAndProve (t : MerkleTree) (e : ByteArray) : Pair MerkleProof MerkleTree :=
+  let newTree := insert t e;
+      proof := generateProof newTree e
+  in maybe (failwith "impossible") \ { p := (p, newTree) } proof;

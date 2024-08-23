@@ -1,0 +1,49 @@
+module Simulator.RM.Resource;
+
+import Stdlib.Prelude open;
+import Simulator.RM.Field open;
+import Simulator.Data.Hash open using {hash};
+import Simulator.RM.Commitment as Commitment open using {Commitment};
+import Anoma.Types open using {PrivateKey; Signature};
+import Anoma.System open using {anomaSignDetached};
+import Anoma.Data.ByteArray as ByteArray open using {ByteArray};
+import Anoma.Types open using {module Signature};
+
+type Resource := mk {
+  l : FF;
+  label : FF;
+  q : FF;
+  v : FF;
+  eph : FF;
+  nonce : FF;
+  cnk : FF;
+  rseed : FF
+};
+
+commitment : Resource -> Commitment := hash >> Commitment.mk;
+
+type Nullifier := mkNullifier {
+  signature : Signature
+};
+
+nullifier (privateKey : PrivateKey) (r : Resource) : Nullifier := anomaSignDetached r privateKey |> mkNullifier;
+
+instance
+SignatureOrdI : Ord Signature := mkOrd (Ord.cmp on Signature.unSignature);
+
+instance
+NullifierOrdI : Ord Nullifier := mkOrd (Ord.cmp on Nullifier.signature); 
+
+type Kind := mkKind {
+  unKind : ByteArray;
+};
+
+kind (r : Resource) : Kind := hash (Resource.l r, Resource.label r) |> mkKind;
+
+type Delta := mkDelta {
+  kind : Kind;
+  quantity : FF
+};
+
+delta (r : Resource) : Delta := mkDelta (kind r) (Resource.q r);
+
