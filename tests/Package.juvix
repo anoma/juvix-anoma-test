@@ -6,9 +6,9 @@ package : Package :=
   defaultPackage@?{
     name := "tests";
     dependencies :=
-      [ github "anoma" "juvix-stdlib" "v0.6.0"
-      ; github "anoma" "juvix-anoma-stdlib" "v0.6.0"
-      ; github "anoma" "juvix-test" "v0.13.0"
+      [ github "anoma" "juvix-stdlib" "v0.7.0"
+      ; github "anoma" "juvix-anoma-stdlib" "v0.8.0"
+      ; github "anoma" "juvix-test" "v0.15.0"
       ; path "../"
       ]
   };

@@ -23,18 +23,6 @@ syntax operator <> cons;
 
 module ByteArray;
 
-  empty : ByteArray := ByteArray.mk [];
-
-  singleton (b : Byte) : ByteArray := ByteArray.mk [b];
-
   open ByteArray public;
 
 end;
-
-instance
-ByteArrayEqI : Eq ByteArray :=
-  mkEq@{
-    eq (ba1 ba2 : ByteArray) : Bool :=
-      ByteArray.length ba1 == ByteArray.length ba2
-        && ByteArray.toAnomaContents ba1 == ByteArray.toAnomaContents ba2
-  };
