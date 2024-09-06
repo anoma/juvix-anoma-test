@@ -2,12 +2,16 @@ module Transaction;
 
 import Stdlib.Prelude open;
 import Anoma open;
+import Test.Delta open;
 
 mkTransaction
   (privateKey : PrivateKey)
   (consumed : List Resource)
   (created : List Resource)
-  {txDelta : Delta := []}
+  {txDelta : Delta := computeDelta@{
+    consumed;
+    created
+  }}
   : Transaction :=
   Transaction.mk@{
     roots := [];
@@ -20,9 +24,7 @@ mkTransaction
   };
 
 mkResource
-  (publicKey : PublicKey)
-  (logicFn : Resource -> Transaction -> Bool)
-  (amount : Nat) : Resource :=
+  (publicKey : PublicKey) (logicFn : Resource -> Transaction -> Bool) (amount : Nat) : Resource :=
   Resource.mk@{
     logic := logicFn;
     label := 0;

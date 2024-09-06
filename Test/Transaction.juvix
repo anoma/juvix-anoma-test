@@ -35,17 +35,16 @@ verifyResourceSet (tx : Transaction) (ctx : Context) : Context :=
 --- Check that the computed delta is equal to the Transaction delta
 verifyDelta (tx : Transaction) (ctx : Context) : Context :=
   let
-    rs := partitionResources tx;
-    withCreatedDelta :=
-      for (acc := emptyDeltaMap) (r in ResourcePartition.created rs)
-        addDelta acc r;
-    withConsumedDelta :=
-      for (acc := withCreatedDelta) (r in ResourcePartition.consumed rs)
-        subDelta acc r;
+    rs : ResourcePartition := partitionResources tx;
+    delta :=
+      computeDelta@{
+        consumed := ResourcePartition.consumed rs;
+        created := ResourcePartition.created rs
+      };
   in ctx
-    |> info ("Computed Delta\n" ++str printDeltaMap withConsumedDelta)
+    |> info ("Computed Delta\n" ++str printDelta delta)
     |> if
-      | Transaction.delta tx /= toDelta withConsumedDelta := Context.fail "... Delta invalid"
+      | Transaction.delta tx /= delta := Context.fail "... Delta invalid"
       | else := info "... Delta valid";
 
 --- Check that all logic functions are valid
