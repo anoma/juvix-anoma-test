@@ -1,0 +1,44 @@
+module Test.Balance;
+
+import Stdlib.Prelude open;
+import Anoma open;
+import Test.Extra.Delta open public;
+
+type Balance :=
+  mkBalance {
+    excessConsumed : Nat;
+    excessCreated : Nat
+  };
+
+balanced : Balance :=
+  mkBalance@{
+    excessConsumed := 0;
+    excessCreated := 0
+  };
+
+transactionBalance (tx : Transaction) : Balance :=
+  for (acc := balanced) (dc in Transaction.delta tx)
+    {case DeltaComponent.sign dc of
+      | false :=
+        acc@Balance{excessConsumed := Balance.excessConsumed acc + DeltaComponent.amount dc}
+      | true := acc@Balance{excessCreated := Balance.excessCreated acc + DeltaComponent.amount dc}};
+
+instance
+Balance-Show : Show Balance :=
+  mkShow
+    \ {b :=
+      "{"
+        ++str "excessConsumed : "
+        ++str (b |> Balance.excessConsumed |> Show.show)
+        ++str ", "
+        ++str "excessCreated : "
+        ++str (b |> Balance.excessCreated |> Show.show)
+        ++str "}"};
+
+instance
+Balance-Eq : Eq Balance :=
+  mkEq@{
+    eq (lhs rhs : Balance) : Bool :=
+      Balance.excessConsumed lhs == Balance.excessConsumed rhs
+        && Balance.excessCreated lhs == Balance.excessCreated rhs
+  };

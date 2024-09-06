@@ -8,18 +8,9 @@ import Test.Context open;
 import Data.Set open;
 import Data.Set.AVL as Set;
 import Test.Delta open;
+import Test.Balance open;
 
 open Context;
-
-verify (tx : Transaction) (ctx : Context) : Context :=
-  ctx
-    |> info "Verifying transaction"
-    |> info "Verifying resource set"
-    |> verifyResourceSet tx
-    |> info "Verifying delta sum"
-    |> verifyDelta tx
-    |> info "Verifying logic functions"
-    |> verifyLogics tx;
 
 verifyResourceSet (tx : Transaction) (ctx : Context) : Context :=
   let
@@ -43,10 +34,26 @@ verifyDelta (tx : Transaction) (ctx : Context) : Context :=
       for (acc := withCreatedDelta) (r in ResourcePartition.consumed rs)
         subDelta acc r;
   in ctx
-    |> info ("Computed Delta\n" ++str printDeltaMap withConsumedDelta)
+    |> info ("Computed Delta: " ++str printDeltaMap withConsumedDelta)
     |> if
       | Transaction.delta tx /= toDelta withConsumedDelta := Context.fail "... Delta invalid"
       | else := info "... Delta valid";
+
+--- Check that the transaction balance
+verifyBalance
+  (tx : Transaction) (ctx : Context) {expectedBalance : Balance := balanced} : Context :=
+  let
+    bal :=
+      transactionBalance@{
+        tx
+      };
+  in ctx
+
+    |> info
+      ("Computed Balance: " ++str Show.show bal ++str " expected " ++str Show.show expectedBalance)
+    |> if
+      | bal /= expectedBalance := Context.fail "... Balance invalid"
+      | else := info "... Balance valid";
 
 --- Check that all logic functions are valid
 verifyLogics (tx : Transaction) (ctx : Context) : Context :=
@@ -86,3 +93,20 @@ checkPartitionResources
           | member? r resourceSet && sigCheck := r :: acc
           | else := acc;
   in resourceCommitments, resourceNullifiers;
+
+verify {expectedBalance : Balance := balanced} (tx : Transaction) (ctx : Context) : Context :=
+  ctx
+    |> info "Verifying transaction"
+    |> info "Verifying resource set"
+    |> verifyResourceSet tx
+    |> info "Verifying delta sum"
+    |> verifyDelta tx
+    |> info "Verifying balance"
+    |> \ {ctx :=
+      verifyBalance@{
+        tx;
+        ctx;
+        expectedBalance
+      }}
+    |> info "Verifying logic functions"
+    |> verifyLogics tx;
