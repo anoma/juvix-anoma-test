@@ -9,8 +9,7 @@ type DeltaMap := mkDeltaMap {unDeltaMap : Map Kind DeltaComponent};
 
 amountIsZero : DeltaComponent -> Bool := DeltaComponent.amount >> (/=) 0;
 
-toDelta : DeltaMap -> Delta :=
-  DeltaMap.unDeltaMap >> Map.toList >> filter (snd >> amountIsZero) >> map snd;
+toDelta : DeltaMap -> Delta := DeltaMap.unDeltaMap >> Map.toList >> map snd;
 
 emptyDeltaMap : DeltaMap := mkDeltaMap Map.empty;
 
