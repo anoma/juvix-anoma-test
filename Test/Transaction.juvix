@@ -2,6 +2,8 @@ module Test.Transaction;
 
 import Stdlib.Prelude open;
 import Anoma open;
+
+
 import Anoma.Rep as Rep;
 
 import Test.Context open;
@@ -16,7 +18,7 @@ verify (tx : Transaction) (ctx : Context) : Context :=
     |> info "Verifying transaction"
     |> info "Verifying resource set"
     |> verifyResourceSet tx
-    |> info "Verifying delta sum"
+              |> info "Verifying delta sum"
     |> verifyDelta tx
     |> info "Verifying logic functions"
     |> verifyLogics tx;

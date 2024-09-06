@@ -2,25 +2,28 @@ module AnomaExample;
 
 import Stdlib.Prelude open;
 import Anoma open;
-import Transaction open;
+        import Transaction open;
 import Test.Anoma open;
 import Keys open;
 
-validTx : Transaction :=
+validTx
+ : Transaction :=
   let
-    r :=
-      mkResource@{
-        publicKey := pubKey;
-        logicFn := \ {_ _ := true};
-        amount := 1
-      };
+ r :=
+   mkResource@{
+     publicKey := pubKey;
+     logicFn := \ {_ _ := true};
+     amount := 1
+   };
   in mkTransaction@{
     privateKey := privKey;
     consumed := [r];
     created := [r]
   };
 
-invalidLogicFnTx : Transaction :=
+invalidLogicFnTx 
+: 
+Transaction :=
   let
     r :=
       mkResource@{
@@ -34,7 +37,9 @@ invalidLogicFnTx : Transaction :=
     created := [r]
   };
 
-emptyProofsTx : Transaction := validTx@Transaction{proofs := []};
+emptyProofsTx : 
+Transaction 
+:= validTx@Transaction{proofs := []};
 
 invalidPubKey : Transaction :=
   let
@@ -63,9 +68,10 @@ nonMatchingDelta : Transaction :=
     consumed := [r@Resource{quantity := 2}];
     created := [r];
     txDelta :=
-      [ DeltaComponent.mk@{
+[ DeltaComponent.mk@{
+
         denom := anomaKind r;
-        amount := 1;
+            amount := 1;
         sign := true
       }
       ]

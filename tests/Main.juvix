@@ -16,8 +16,13 @@ main : IO :=
           "Transaction with invalid logic function is invalid"
           (anomaAssertFail (verify invalidLogicFnTx))
         ; testCase
+
+
           "Transaction with empty proofs is invalid"
-          (anomaAssertFail (verify emptyProofsTx))
+          (anomaAssertFail (
+          
+          verify    
+              emptyProofsTx))
         ; testCase
           "Transaction with invalid public key is invalid"
           (anomaAssertFail (verify invalidPubKey))

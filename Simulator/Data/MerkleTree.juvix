@@ -20,11 +20,12 @@ type Leaf :=
 type MerkleTree :=
   | empty
   | leaf Leaf
-  | node Node;
+        | node Node;
 
 treeHash : MerkleTree -> ByteArray
   | empty := ByteArray.empty
-  | (leaf l) := Leaf.hash l
+  | (leaf l) 
+  := Leaf.hash l
   | (node n) := Node.hash n;
 
 rootHash : MerkleTree -> ByteArray := treeHash;
