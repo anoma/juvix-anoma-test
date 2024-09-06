@@ -6,38 +6,39 @@ import Test.Extra.Delta open public;
 
 type Balance :=
   mkBalance {
-    unconsumed : Nat;
-    uncreated : Nat
+    excessConsumed : Nat;
+    excessCreated : Nat
   };
 
-zeroBalance : Balance :=
+balanced : Balance :=
   mkBalance@{
-    unconsumed := 0;
-    uncreated := 0
+    excessConsumed := 0;
+    excessCreated := 0
   };
 
 transactionBalance (tx : Transaction) : Balance :=
-  listFor (acc := zeroBalance) (dc in Transaction.delta tx)
+  for (acc := balanced) (dc in Transaction.delta tx)
     {case DeltaComponent.sign dc of
-      | true := acc@Balance{unconsumed := Balance.unconsumed acc + DeltaComponent.amount dc}
-      | false := acc@Balance{uncreated := Balance.uncreated acc + DeltaComponent.amount dc}};
+      | false :=
+        acc@Balance{excessConsumed := Balance.excessConsumed acc + DeltaComponent.amount dc}
+      | true := acc@Balance{excessCreated := Balance.excessCreated acc + DeltaComponent.amount dc}};
 
 instance
 Balance-Show : Show Balance :=
   mkShow
     \ {b :=
       "{"
-        ++str "unconsumed : "
-        ++str (b |> Balance.unconsumed |> Show.show)
+        ++str "excessConsumed : "
+        ++str (b |> Balance.excessConsumed |> Show.show)
         ++str ", "
-        ++str "uncreated : "
-        ++str (b |> Balance.uncreated |> Show.show)
+        ++str "excessCreated : "
+        ++str (b |> Balance.excessCreated |> Show.show)
         ++str "}"};
 
 instance
 Balance-Eq : Eq Balance :=
   mkEq@{
     eq (lhs rhs : Balance) : Bool :=
-      Balance.unconsumed lhs == Balance.unconsumed rhs
-        && Balance.uncreated lhs == Balance.uncreated rhs
+      Balance.excessConsumed lhs == Balance.excessConsumed rhs
+        && Balance.excessCreated lhs == Balance.excessCreated rhs
   };

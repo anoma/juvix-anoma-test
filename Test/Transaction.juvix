@@ -41,7 +41,7 @@ verifyDelta (tx : Transaction) (ctx : Context) : Context :=
 
 --- Check that the transaction balance
 verifyBalance
-  (tx : Transaction) (ctx : Context) {expectedBalance : Balance := zeroBalance} : Context :=
+  (tx : Transaction) (ctx : Context) {expectedBalance : Balance := balanced} : Context :=
   let
     bal :=
       transactionBalance@{
@@ -94,7 +94,7 @@ checkPartitionResources
           | else := acc;
   in resourceCommitments, resourceNullifiers;
 
-verify {expectedBalance : Balance := zeroBalance} (tx : Transaction) (ctx : Context) : Context :=
+verify {expectedBalance : Balance := balanced} (tx : Transaction) (ctx : Context) : Context :=
   ctx
     |> info "Verifying transaction"
     |> info "Verifying resource set"

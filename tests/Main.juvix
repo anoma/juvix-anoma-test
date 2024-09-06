@@ -32,8 +32,8 @@ main : IO :=
               verify@{
                 expectedBalance :=
                   mkBalance@{
-                    unconsumed := 0;
-                    uncreated := 1
+                    excessConsumed := 1;
+                    excessCreated := 0
                   };
                 tx := matchingDelta;
                 ctx
