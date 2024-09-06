@@ -7,68 +7,89 @@ import Test.Anoma open;
 import Keys open;
 
 validTx : Transaction :=
-  let r := mkResource@{
-     publicKey := pubKey;
-     logicFn := \ { _ _ := true };
-     amount := 1
-   } in
-   mkTransaction@{
+  let
+    r :=
+      mkResource@{
+        publicKey := pubKey;
+        logicFn := \ {_ _ := true};
+        amount := 1
+      };
+  in mkTransaction@{
     privateKey := privKey;
     consumed := [r];
     created := [r]
-};
+  };
 
 invalidLogicFnTx : Transaction :=
-  let r := mkResource@{
-     publicKey := pubKey;
-     logicFn := \ { _ _ := false };
-     amount := 1
-   } in
-   mkTransaction@{
+  let
+    r :=
+      mkResource@{
+        publicKey := pubKey;
+        logicFn := \ {_ _ := false};
+        amount := 1
+      };
+  in mkTransaction@{
     privateKey := privKey;
     consumed := [r];
     created := [r]
-};
+  };
 
-emptyProofsTx : Transaction :=
-  validTx@Transaction{proofs := []};
+emptyProofsTx : Transaction := validTx@Transaction{proofs := []};
 
 invalidPubKey : Transaction :=
-  let r := mkResource@{
-     publicKey := replicate 32 0x0 |> PublicKey.mk;
-     logicFn := \ { _ _ := true };
-     amount := 1
-   } in
-   mkTransaction@{
+  let
+    r :=
+      mkResource@{
+        publicKey := replicate 32 0x0 |> PublicKey.mk;
+        logicFn := \ {_ _ := true};
+        amount := 1
+      };
+  in mkTransaction@{
     privateKey := privKey;
     consumed := [r];
     created := [r]
-};
+  };
 
 nonMatchingDelta : Transaction :=
-  let r := mkResource@{
-     publicKey := pubKey;
-     logicFn := \ { _ _ := true };
-     amount := 1
-   } in
-   mkTransaction@{
+  let
+    r :=
+      mkResource@{
+        publicKey := pubKey;
+        logicFn := \ {_ _ := true};
+        amount := 1
+      };
+  in mkTransaction@{
     privateKey := privKey;
     consumed := [r@Resource{quantity := 2}];
     created := [r];
-    txDelta := [DeltaComponent.mk@{denom := anomaKind r; amount := 1; sign := true}]
-};
+    txDelta :=
+      [ DeltaComponent.mk@{
+        denom := anomaKind r;
+        amount := 1;
+        sign := true
+      }
+      ]
+  };
 
 matchingDelta : Transaction :=
-  let r := mkResource@{
-     publicKey := pubKey;
-     logicFn := \ { _ _ := true };
-     amount := 1
-   } in
-   mkTransaction@{
+  let
+    r :=
+      mkResource@{
+        publicKey := pubKey;
+        logicFn := \ {_ _ := true};
+        amount := 1
+      };
+  in mkTransaction@{
     privateKey := privKey;
     consumed := [r@Resource{quantity := 2}];
     created := [r];
-    txDelta := [DeltaComponent.mk@{denom := anomaKind r; amount := 1; sign := false}]
-};
+    txDelta :=
+      [ DeltaComponent.mk@{
+        denom := anomaKind r;
+        amount := 1;
+        sign := false
+      }
+      ]
+  };
 
 main : IO := mkMain (verify validTx);

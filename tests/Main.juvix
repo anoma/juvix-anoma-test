@@ -6,28 +6,37 @@ import Test.Anoma open;
 import AnomaExample open;
 import Test.JuvixUnit open;
 import Test.Simulator.MerkleTree open using {merkleTestSuite};
+import Test.Balance open;
 
 main : IO :=
   runTestSuite
-    (testSuite
-      "Anoma tests"
-      [ testCase
-        "Valid transaction is valid"
-        (anomaAssertPass (verify validTx))
-      ; testCase
-        "Transaction with invalid logic function is invalid"
-        (anomaAssertFail (verify invalidLogicFnTx))
-      ; testCase
-        "Transaction with empty proofs is invalid"
-        (anomaAssertFail (verify emptyProofsTx))
-      ; testCase
-        "Transaction with invalid public key is invalid"
-        (anomaAssertFail (verify invalidPubKey))
-      ; testCase
-        "Transaction delta does not equal the delta sum is invalid"
-        (anomaAssertFail (verify nonMatchingDelta))
-      ; testCase
-        "Transaction delta equals the delta sum is valid"
-        (anomaAssertPass (verify matchingDelta))
-      ])
-  >>> runTestSuite merkleTestSuite;
+      (testSuite
+        "Anoma tests"
+        [ testCase "Valid transaction is valid" (anomaAssertPass (verify validTx))
+        ; testCase
+          "Transaction with invalid logic function is invalid"
+          (anomaAssertFail (verify invalidLogicFnTx))
+        ; testCase
+          "Transaction with empty proofs is invalid"
+          (anomaAssertFail (verify emptyProofsTx))
+        ; testCase
+          "Transaction with invalid public key is invalid"
+          (anomaAssertFail (verify invalidPubKey))
+        ; testCase
+          "Transaction delta does not equal the delta sum is invalid"
+          (anomaAssertFail (verify nonMatchingDelta))
+        ; testCase
+          "Transaction delta equals the delta sum is valid"
+          (anomaAssertPass
+            \ {ctx :=
+              verify@{
+                expectedBalance :=
+                  mkBalance@{
+                    unconsumed := 0;
+                    uncreated := 1
+                  };
+                tx := matchingDelta;
+                ctx
+              }})
+        ])
+    >>> runTestSuite merkleTestSuite;
