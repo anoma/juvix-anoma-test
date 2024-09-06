@@ -9,10 +9,15 @@ type DeltaMap := mkDeltaMap {unDeltaMap : Map Kind DeltaComponent};
 
 amountIsZero : DeltaComponent -> Bool := DeltaComponent.amount >> (/=) 0;
 
-toDelta : DeltaMap -> Delta :=
-  DeltaMap.unDeltaMap >> Map.toList >> filter (snd >> amountIsZero) >> map snd;
+toDelta : DeltaMap -> Delta := DeltaMap.unDeltaMap >> Map.toList >> map snd;
 
 emptyDeltaMap : DeltaMap := mkDeltaMap Map.empty;
+
+computeDelta (consumed : List Resource) (created : List Resource) : Delta :=
+  let
+    withCreatedDelta : DeltaMap := for (acc := emptyDeltaMap) (r in created) addDelta acc r;
+    withConsumedDelta : DeltaMap := for (acc := withCreatedDelta) (r in consumed) subDelta acc r;
+  in toDelta withConsumedDelta;
 
 appendDelta (sign : Bool) (m : DeltaMap) (r : Resource) : DeltaMap :=
   let
@@ -29,10 +34,8 @@ subDelta : DeltaMap -> Resource -> DeltaMap :=
     sign := false
   };
 
-printDeltaMap (dm : DeltaMap) : String :=
-  let
-    delta := toDelta dm;
-  in if
+printDelta (delta : Delta) : String :=
+  if
     | null delta := "[Empty Delta]"
     | else :=
       unlines

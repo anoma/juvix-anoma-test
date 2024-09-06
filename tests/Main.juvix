@@ -9,25 +9,23 @@ import Test.Simulator.MerkleTree open using {merkleTestSuite};
 
 main : IO :=
   runTestSuite
-    (testSuite
-      "Anoma tests"
-      [ testCase
-        "Valid transaction is valid"
-        (anomaAssertPass (verify validTx))
-      ; testCase
-        "Transaction with invalid logic function is invalid"
-        (anomaAssertFail (verify invalidLogicFnTx))
-      ; testCase
-        "Transaction with empty proofs is invalid"
-        (anomaAssertFail (verify emptyProofsTx))
-      ; testCase
-        "Transaction with invalid public key is invalid"
-        (anomaAssertFail (verify invalidPubKey))
-      ; testCase
-        "Transaction delta does not equal the delta sum is invalid"
-        (anomaAssertFail (verify nonMatchingDelta))
-      ; testCase
-        "Transaction delta equals the delta sum is valid"
-        (anomaAssertPass (verify matchingDelta))
-      ])
-  >>> runTestSuite merkleTestSuite;
+      (testSuite
+        "Anoma tests"
+        [ testCase "Valid transaction is valid" (anomaAssertPass (verify validTx))
+        ; testCase
+          "Transaction with invalid logic function is invalid"
+          (anomaAssertFail (verify invalidLogicFnTx))
+        ; testCase
+          "Transaction with empty proofs is invalid"
+          (anomaAssertFail (verify emptyProofsTx))
+        ; testCase
+          "Transaction with invalid public key is invalid"
+          (anomaAssertFail (verify invalidPubKey))
+        ; testCase
+          "Transaction delta does not equal the delta sum is invalid"
+          (anomaAssertFail (verify nonMatchingDelta))
+        ; testCase
+          "Transaction delta equals the delta sum is valid"
+          (anomaAssertPass (verify matchingDelta))
+        ])
+    >>> runTestSuite merkleTestSuite;
