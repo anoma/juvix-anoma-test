@@ -12,23 +12,6 @@ import Test.Balance open;
 
 open Context;
 
-verify {expectedBalance : Balance := zeroBalance} (tx : Transaction) (ctx : Context)  : Context :=
-  ctx
-    |> info "Verifying transaction"
-    |> info "Verifying resource set"
-    |> verifyResourceSet tx
-    |> info "Verifying delta sum"
-    |> verifyDelta tx
-    |> info "Verifying balance"
-    |> \ {ctx :=
-      verifyBalance@{
-        tx;
-        ctx;
-        expectedBalance
-      }}
-    |> info "Verifying logic functions"
-    |> verifyLogics tx;
-
 verifyResourceSet (tx : Transaction) (ctx : Context) : Context :=
   let
     txCommitments := Transaction.commitments tx;
@@ -110,3 +93,20 @@ checkPartitionResources
           | member? r resourceSet && sigCheck := r :: acc
           | else := acc;
   in resourceCommitments, resourceNullifiers;
+
+verify {expectedBalance : Balance := zeroBalance} (tx : Transaction) (ctx : Context) : Context :=
+  ctx
+    |> info "Verifying transaction"
+    |> info "Verifying resource set"
+    |> verifyResourceSet tx
+    |> info "Verifying delta sum"
+    |> verifyDelta tx
+    |> info "Verifying balance"
+    |> \ {ctx :=
+      verifyBalance@{
+        tx;
+        ctx;
+        expectedBalance
+      }}
+    |> info "Verifying logic functions"
+    |> verifyLogics tx;
